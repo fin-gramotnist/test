@@ -25,6 +25,18 @@
   body.lock textarea,body.lock input{user-select:text;-webkit-user-select:text}
   .qhead{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:500;color:var(--p)}
   .qt{font-size:28px;font-weight:700;color:var(--p);font-variant-numeric:tabular-nums}
+  body.noper .qbar,body.noper #qtm{display:none}
+  .qnav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}
+  .qnav button{min-width:44px;padding:8px 10px;margin:0;font-size:15px;font-weight:700;border-radius:8px;background:#fff;color:var(--mut);border:2px solid #dadce0}
+  .qnav button.cur{background:var(--p);color:#fff;border-color:var(--p)}
+  .qnav button.can{color:var(--ok);border-color:var(--ok)}
+  .qnav button:disabled{opacity:.55}
+  .navtip{font-size:12px;color:var(--mut);margin:2px 0 6px}
+  body:not(.ret) .m-ret{display:none}
+  #qcard.rev #qbody{display:none}
+  #qcard:not(.rev) #revbox{display:none}
+  #revbox{margin:14px 0}
+  #revbox .big{font-size:20px;font-weight:700;color:var(--ok);margin-bottom:8px}
   .qt.low{color:var(--red)}
   .qbar{height:6px;background:var(--p2);border-radius:3px;overflow:hidden;margin:8px 0 12px}
   .qbar i{display:block;height:100%;width:100%;background:var(--p);transition:width .5s linear}
@@ -112,7 +124,7 @@
   <div id="login" class="card hidden">
     <div class="warn">
       <b>Правила роботи</b><br>
-      • Завдання показуються <b>по одному</b>. На кожне — <b id="perTxt"></b>. Повернутися назад не можна.<br>
+      • Завдання показуються <b>по одному</b>. <span id="perTxt"></span> <span id="backTxt">Повернутися назад не можна.</span><br>
       <span class="m-type">• У кожному завданні <b id="optTxt">4 варіанти</b>. Обери правильний і почни <b>писати його з клавіатури</b> в поле «Моя відповідь».
         <b>Щойно почнеш третє слово — решта тексту підставиться сама.</b>
         Перевір текст, натисни <b>✓</b> праворуч від поля, а потім «Записати й далі». Кожне завдання — <b id="ptsTxt"></b>.<br>
@@ -151,6 +163,14 @@
     <div class="card" id="qcard">
       <div class="qhead"><span id="qno"></span><span class="qt" id="qtm">2:00</span></div>
       <div class="qbar"><i id="qpr"></i></div>
+      <div class="qnav m-ret" id="qnav"></div>
+      <div class="navtip m-ret" id="navtip"></div>
+      <div id="revbox">
+        <div class="big">✅ Усі завдання пройдено</div>
+        <p id="revTxt"></p>
+        <p class="mut">До кінця тесту: <b id="revTm"></b></p>
+      </div>
+      <div id="qbody">
       <div class="mut small" id="qsec"></div>
       <div class="q" id="qtext" aria-hidden="true"></div>
       <div id="opts" aria-hidden="true"></div>
@@ -168,9 +188,10 @@
         </div>
         <div class="hint" id="hint"></div>
       </div>
+      </div>
       <div class="err" id="qerr"></div>
       <button id="next">Записати й далі →</button>
-      <p class="mut small">Повернутися до попереднього завдання не можна. Коли час мине, твоя відповідь збережеться сама.</p>
+      <p class="mut small" id="qnote">Повернутися до попереднього завдання не можна. Коли час мине, твоя відповідь збережеться сама.</p>
     </div>
   </div>
 
@@ -223,13 +244,18 @@ function APP(){
   var tasks = [], optEls = [], conEls = [], optNorm = [], painted = [], W = CFG.win, skew = W.now - Date.now();
   var MATCH = CFG.mode === 'match';
   if (MATCH) document.body.classList.add('match');
+  // без обмеження часу на окреме завдання + повернення до пройдених завдань
+  var NOPER = CFG.perTask === false, RET = NOPER ? (CFG.returns || 0) : 0, RETTEST = CFG.retMode === 'test', sureBack = -1, sureSubmit = false;
+  if (NOPER) document.body.classList.add('noper');
+  if (RET) document.body.classList.add('ret');
   var finished = false, started = false, guarded = false;
   var kbdAt = 0, tapAt = 0, filling = false, lastOk = '', voiceAt = 0, hiding = false;
   var away = { blur: false, hidden: false, fs: false, narrow: false };
   var fsOn = false, fsBroken = false, wasFs = false, wasNarrow = false;
   var leftAt = 0, leftKind = '', leaveT = null, counted = false, lastBack = '';
   var tickT = null, gateT = null, busy = false, waiters = [], sureEmpty = false, sureNoMatch = false;
-  var baseSub = CFG.count + ' завдань · на кожне до ' + CFG.perMin + ' хв' + (CFG.carry ? ' (залишок часу переходить далі)' : '') +
+  var baseSub = CFG.count + ' завдань · ' + (NOPER ? 'на весь тест ' + CFG.totalMin + ' хв'
+    : 'на кожне до ' + CFG.perMin + ' хв' + (CFG.carry ? ' (залишок часу переходить далі)' : '')) +
     ' · кожне ' + fmt(CFG.pts) + ' б · разом ' + fmt(CFG.total) + ' б';
 
   if (CFG.block) document.body.classList.add('lock');
@@ -243,7 +269,14 @@ function APP(){
   }
   $('ptsTxt').textContent = balyTxt(CFG.pts);
   if (CFG.nOpt) $('optTxt').textContent = CFG.nOpt + (CFG.nOpt >= 5 ? ' варіантів' : ' варіанти');
-  $('perTxt').textContent = 'до ' + CFG.perMin + ' хв' + (CFG.carry ? '; невикористані хвилини переходять на наступне завдання' : '');
+  $('perTxt').innerHTML = NOPER ? 'На весь тест — <b>' + CFG.totalMin + ' хв</b>, на окреме завдання обмеження немає.'
+    : 'На кожне — <b>до ' + CFG.perMin + ' хв' + (CFG.carry ? '; невикористані хвилини переходять на наступне завдання' : '') + '</b>.';
+  if (RET) {
+    $('backTxt').innerHTML = RETTEST
+      ? 'Можна <b>один раз</b> за тест повернутися до будь-якого пройденого завдання й змінити відповідь — натисни його номер угорі.'
+      : 'До <b>кожного</b> пройденого завдання можна <b>один раз</b> повернутися й змінити відповідь — натисни його номер угорі.';
+    $('qnote').textContent = 'Коли час мине, твоя відповідь збережеться сама.';
+  }
   if (MATCH) {
     $('ptsSol').textContent = balyTxt(CFG.ptsSol); $('ptsCon').textContent = balyTxt(CFG.ptsCon);
     var nS = CFG.nOpt || 4, nC = CFG.nCon || nS;
@@ -371,7 +404,7 @@ function APP(){
   // ---- запис подій у таблицю вчителя (повторюється, якщо зник інтернет) ----
   function logEv(kind, sec){
     if (!st.id) return;
-    var pos = Math.min(st.cur || 0, Math.max(0, tasks.length - 1));
+    var pos = Math.min(vi() || 0, Math.max(0, tasks.length - 1));
     (function send(n){
       run('logEvent', [st.id, kind, sec || 0, pos], function(){}, function(e){ if (!e && n < 5) setTimeout(function(){ send(n + 1); }, 3000 + Math.random() * 3000); });
     })(1);
@@ -441,23 +474,42 @@ function APP(){
   function begin(p){
     if (started) return; started = true;
     tasks = p.tasks; skew = p.now - Date.now(); PER = (p.per || CFG.per) * 1000;
-    st.end = p.end; st.cur = p.cur; st.dl = p.dl; st.name = p.name; st.cls = p.cls;
+    st.end = p.end; st.cur = p.cur; st.dl = NOPER ? p.end : p.dl; st.name = p.name; st.cls = p.cls;
     st.a = st.a || {}; st.q = st.q || [];
-    if (!st.draft || st.draft.pos !== st.cur) st.draft = null;
+    st.b = st.b || {};
+    if (p.back) for (var bk in p.back) st.b[bk] = Math.max(st.b[bk] || 0, p.back[bk]);
+    st.bn = Math.max(st.bn || 0, p.bn || 0);
+    if (st.view != null && !(st.view < st.cur && RET)) { st.view = null; st.fd = null; }
+    if (!st.draft || st.draft.pos !== vi()) st.draft = null;
     save();
     $('loading').classList.add('hidden'); $('login').classList.add('hidden');
     $('sub').textContent = p.name + ' · ' + p.cls + ' · ' + baseSub.replace('до ' + CFG.perMin + ' хв', 'до ' + mmss(PER));
     $('quiz').classList.remove('hidden'); $('bar').classList.remove('hidden');
     showExits(); guard();
-    if (st.cur >= tasks.length) { submit(true); return; }
+    if (st.cur >= tasks.length && !(RET && srv() < st.end)) { submit(true); return; }
     showQ();
     tickT = setInterval(tick, 500); tick();
   }
 
   function showQ(){
-    var t = tasks[st.cur];
-    sureEmpty = false; sureNoMatch = false;
-    $('qno').textContent = 'Завдання ' + (st.cur + 1) + ' з ' + tasks.length;
+    sureEmpty = false; sureNoMatch = false; sureBack = -1; sureSubmit = false;
+    var rev = RET && st.view == null && st.cur >= tasks.length;
+    $('qcard').classList.toggle('rev', rev);
+    renderNav();
+    if (rev) {
+      var miss = tasks.map(function(t, k){ return st.a[t.n] ? 0 : k + 1; }).filter(Boolean);
+      $('qno').textContent = 'Перевір роботу';
+      $('revTxt').textContent = (anyBack() ? 'Можеш повернутися до завдання й змінити відповідь — натисни його номер угорі' +
+        (RETTEST ? ' (лише один раз за тест)' : ' (до кожного — один раз)') + '. Або здай роботу.' : 'Повернень більше не лишилося — здай роботу.') +
+        (miss.length ? ' Без відповіді: ' + miss.join(', ') + '.' : '');
+      $('next').textContent = 'Здати роботу ✓';
+      $('qerr').textContent = '';
+      $('qcard').classList.remove('filled');
+      progress(); window.scrollTo(0, 0);
+      return;
+    }
+    var t = tasks[vi()];
+    $('qno').textContent = 'Завдання ' + (vi() + 1) + ' з ' + tasks.length + (st.view != null ? ' · повернення' : '');
     $('qsec').textContent = CFG.sections[t.s] || '';
     painted = [$('qtext')];
     var box = $('opts'); box.innerHTML = '';
@@ -484,8 +536,9 @@ function APP(){
     $('qtext')._t = t.q;
     repaint();
     $('qerr').textContent = '';
-    $('next').textContent = st.cur === tasks.length - 1 ? 'Записати й здати роботу ✓' : 'Записати й далі →';
-    if (MATCH) choose(st.draft && st.draft.pos === st.cur ? st.draft.val : '', false);
+    $('next').textContent = st.view != null ? 'Записати й повернутися →'
+      : st.cur === tasks.length - 1 && !RET ? 'Записати й здати роботу ✓' : 'Записати й далі →';
+    if (MATCH) choose(st.draft && st.draft.pos === vi() ? st.draft.val : '', false);
     else {
       $('ans').value = st.draft ? st.draft.val : '';
       lastOk = $('ans').value;
@@ -535,7 +588,7 @@ function APP(){
   /** Ширина стовпців: на комп’ютері таблицю видно повністю; на телефоні — закріплений стовпець розв’язків
    *  і рівно один стовпець висновків поруч (гортання вбік переходить до наступного висновку) */
   function sizeGrid(){
-    var box = $('mtw'), tb = $('mt'), t = tasks[st.cur];
+    var box = $('mtw'), tb = $('mt'), t = tasks[vi()];
     if (!t || !tb.firstChild) return;
     var W = box.clientWidth;
     if (!W) return;
@@ -556,11 +609,11 @@ function APP(){
       (!narrow ? '' : fit ? ' Гортай таблицю вниз, щоб побачити всі розв’язки А–' + LET[t.o.length - 1] + '.'
         : ' Гортай таблицю вбік, щоб побачити висновки 1–' + n + ', і вниз — розв’язки А–' + LET[t.o.length - 1] + '.');
   }
-  function draftVal(){ return st.draft && st.draft.pos === st.cur ? st.draft.val || '' : ''; }
+  function draftVal(){ return st.draft && st.draft.pos === vi() ? st.draft.val || '' : ''; }
   function choose(val, user){
     if (finished) return;
     var m = /^(.)-(\d)$/.exec(val || ''), ri = m ? LET.indexOf(m[1]) : -1, ci = m ? Number(m[2]) - 1 : -1;
-    if (user) { st.draft = { pos: st.cur, val: val }; save(); sureEmpty = false; $('qerr').textContent = ''; }
+    if (user) { st.draft = { pos: vi(), val: val }; save(); sureEmpty = false; $('qerr').textContent = ''; }
     Array.prototype.forEach.call($('mt').querySelectorAll('tbody tr'), function(tr, i){
       Array.prototype.forEach.call(tr.querySelectorAll('td'), function(td, j){
         var on = i === ri && j === ci;
@@ -592,7 +645,7 @@ function APP(){
     try { el.blur(); } catch(e){}                     // зупиняє голосове введення клавіатури
     setTimeout(function(){
       el.value = lastOk; filling = false;
-      st.draft = { pos: st.cur, val: lastOk }; save(); onInput(false);
+      st.draft = { pos: vi(), val: lastOk }; save(); onInput(false);
       $('qerr').textContent = why === 'paste' ? 'Вставляти текст не можна — пиши з клавіатури. Спробу записано.'
         : 'Голосове введення заборонене — пиши з клавіатури. Спробу записано.';
     }, 60);
@@ -652,7 +705,7 @@ function APP(){
     try { $('ans').blur(); } catch(e){}
     kbdAt = Date.now();
     var has = !!normText($('ans').value);
-    if (has) { st.draft = { pos: st.cur, val: $('ans').value }; setConfirmed(true); }
+    if (has) { st.draft = { pos: vi(), val: $('ans').value }; setConfirmed(true); }
     onInput(false);
     if (has) $('hint').textContent = (matchIdx() >= 0 ? '✓ Підтверджено: варіант ' + LET[matchIdx()] + '. ' : '✓ Підтверджено, але текст не збігається з жодним варіантом. ') +
       'Натисни «' + $('next').textContent.replace(/\s*[→✓]\s*$/, '') + '». Щоб змінити — торкнись поля.';
@@ -680,8 +733,8 @@ function APP(){
     kbdAt = Date.now();
     try { el.blur(); } catch(e){}
     setTimeout(function(){
-      el.value = tasks[st.cur].o[hit]; lastOk = el.value;
-      st.draft = { pos: st.cur, val: el.value }; save();
+      el.value = tasks[vi()].o[hit]; lastOk = el.value;
+      st.draft = { pos: vi(), val: el.value }; save();
       filling = false;
       onInput(false);
       $('hint').textContent = '✨ Підставлено весь текст варіанта ' + LET[hit] + '. Перевір і натисни ✓ праворуч від поля.';
@@ -692,7 +745,7 @@ function APP(){
   function onInput(user){
     var raw = $('ans').value, c = $('qcard'), mi = matchIdx();
     var el = $('ans'); el.style.height = 'auto'; el.style.height = Math.max(96, el.scrollHeight + 4) + 'px'; // поле росте разом із текстом
-    if (user) { st.draft = { pos: st.cur, val: raw }; save(); sureEmpty = false; sureNoMatch = false; $('qerr').textContent = ''; }
+    if (user) { st.draft = { pos: vi(), val: raw }; save(); sureEmpty = false; sureNoMatch = false; $('qerr').textContent = ''; }
     var showMatch = CFG.hint && mi >= 0;
     optEls.forEach(function(d, j){
       var on = showMatch && j === mi;
@@ -709,14 +762,22 @@ function APP(){
 
   function manualNext(){
     if (finished || !tasks.length || filling) return;
+    if (st.view != null) { finishBack(false); return; }
+    if (RET && st.cur >= tasks.length) {
+      var miss = tasks.filter(function(t){ return !st.a[t.n]; }).length;
+      if (miss && !sureSubmit) { sureSubmit = true; $('qerr').textContent = 'Без відповіді ще ' + miss + ' завд. Натисни ще раз, щоб здати роботу.'; return; }
+      submit(false); return;
+    }
     if (MATCH) {
       if (!draftVal() && !sureEmpty) {
         sureEmpty = true;
-        $('qerr').textContent = 'Ти ще не поставив(-ла) позначку в таблиці. Повернутися до цього завдання не можна. Натисни ще раз, щоб перейти далі без відповіді.';
+        $('qerr').textContent = 'Ти ще не поставив(-ла) позначку в таблиці. ' +
+          (RET ? 'Можна перейти далі без відповіді й повернутися сюди пізніше.' : 'Повернутися до цього завдання не можна.') +
+          ' Натисни ще раз, щоб перейти далі без відповіді.';
         return;
       }
       record(false);
-      if (st.cur >= tasks.length) submit(false); else showQ();
+      afterForward();
       return;
     }
     var raw = $('ans').value;
@@ -731,7 +792,60 @@ function APP(){
       return;
     }
     record(false);
-    if (st.cur >= tasks.length) submit(false); else showQ();
+    afterForward();
+  }
+  function afterForward(){ if (st.cur >= tasks.length && !RET) submit(false); else showQ(); }
+
+  // ---- ПОВЕРНЕННЯ до пройденого завдання ----
+  /** Яке завдання зараз на екрані: те, до якого повернулися, або перше непройдене */
+  function vi(){ return st.view != null ? st.view : st.cur; }
+  function usedB(k){ return RETTEST ? (st.bn || 0) : ((st.b || {})[k] || 0); }
+  function canBack(k){ return RET > 0 && !finished && k < st.cur && st.view == null && usedB(k) < RET && srv() < st.end; }
+  function anyBack(){ for (var k = 0; k < tasks.length; k++) if (canBack(k)) return true; return false; }
+  function renderNav(){
+    if (!RET) return;
+    var box = $('qnav'); box.innerHTML = '';
+    tasks.forEach(function(t, k){
+      var b = document.createElement('button'); b.type = 'button';
+      var done = k < st.cur, has = !!(st.a && st.a[t.n]), used = !RETTEST && usedB(k) >= RET;
+      b.textContent = (k + 1) + (done ? (has ? ' ✓' : ' —') : '') + (done && used ? ' 🔒' : '');
+      if (k === vi() && !(st.view == null && st.cur >= tasks.length)) b.className = 'cur';
+      else if (canBack(k)) b.className = 'can';
+      else b.disabled = true;
+      b.title = canBack(k) ? 'Повернутися до завдання ' + (k + 1) : done && used ? 'До цього завдання вже поверталися' : '';
+      b.onclick = function(){ goBack(k); };
+      box.appendChild(b);
+    });
+    $('navtip').textContent = st.view != null ? 'Ти повернувся(-лася) до завдання ' + (st.view + 1) + '. Зміни позначку, якщо треба, і натисни «Записати й повернутися».'
+      : anyBack() ? (RETTEST ? 'Можна один раз за тест повернутися до пройденого завдання — натисни його номер.'
+        : 'Зелені номери — пройдені завдання: до кожного можна один раз повернутися.') : '';
+  }
+  function goBack(k){
+    if (!canBack(k)) return;
+    if (sureBack !== k) {
+      sureBack = k;
+      $('qerr').textContent = 'Повернутися до завдання ' + (k + 1) + '? Це можна зробити лише один раз' +
+        (RETTEST ? ' за весь тест' : ' для цього завдання') + '. Натисни номер ' + (k + 1) + ' ще раз, щоб повернутися.';
+      return;
+    }
+    st.fd = st.view == null && st.draft && st.draft.pos === st.cur ? st.draft : null; // позначка на поточному завданні не загубиться
+    st.b = st.b || {}; st.b[k] = (st.b[k] || 0) + 1; st.bn = (st.bn || 0) + 1;
+    st.view = k;
+    st.draft = { pos: k, val: st.a[tasks[k].n] || '', ok: true };
+    save(); showQ();
+  }
+  /** Записати відповідь на завдання, до якого повернулися, і піти туди, де учень зупинився */
+  function finishBack(auto){
+    var k = st.view;
+    if (k == null) return;
+    var t = tasks[k];
+    var txt = String(st.draft && st.draft.pos === k ? st.draft.val : '').replace(/\s+/g, ' ').trim().slice(0, CFG.maxLen);
+    if (txt) st.a[t.n] = txt;
+    st.q.push({ pos: k, l: txt || st.a[t.n] || '' }); // сервер теж рахує повернення
+    st.view = null;
+    st.draft = st.fd || null; st.fd = null;
+    save(); pump();
+    if (!auto) showQ();
   }
 
   function record(auto){
@@ -740,7 +854,7 @@ function APP(){
     if (txt) st.a[t.n] = txt;
     st.q.push({ pos: st.cur, l: txt });
     st.cur++;
-    st.dl = auto || CFG.carry ? st.dl + PER : srv() + PER; // з перенесенням невикористаний час не пропадає
+    st.dl = NOPER ? st.end : auto || CFG.carry ? st.dl + PER : srv() + PER; // з перенесенням невикористаний час не пропадає
     st.draft = null;
     save(); pump();
   }
@@ -748,11 +862,18 @@ function APP(){
   function tick(){
     if (finished) return;
     var now = srv(), moved = false, n = 0;
-    if (now >= st.end) { if (st.cur < tasks.length) record(true); submit(true); return; }
-    while (st.cur < tasks.length && now >= st.dl && n++ < 100) { record(true); moved = true; }
-    if (st.cur >= tasks.length) { submit(true); return; }
-    if (moved) showQ();
+    if (now >= st.end) {
+      if (st.view != null) finishBack(true); // зміну на завданні, до якого повернулися, теж збережемо
+      if (st.cur < tasks.length) record(true);
+      submit(true); return;
+    }
+    if (!NOPER) {
+      while (st.cur < tasks.length && now >= st.dl && n++ < 100) { record(true); moved = true; }
+      if (st.cur >= tasks.length) { submit(true); return; }
+      if (moved) showQ();
+    }
     var lq = Math.max(0, Math.min(st.dl, st.end) - now), la = Math.max(0, st.end - now);
+    if (RET) { $('revTm').textContent = mmss(la); if (!anyBack() !== !$('qnav').querySelector('.can')) renderNav(); }
     $('qtm').textContent = mmss(lq);
     $('qtm').classList.toggle('low', lq < 20000);
     $('qpr').style.width = Math.min(100, lq / PER * 100) + '%';
@@ -762,7 +883,7 @@ function APP(){
 
   function progress(){
     var N = tasks.length;
-    $('cnt').textContent = 'Завдання ' + Math.min(st.cur + 1, N) + ' / ' + N;
+    $('cnt').textContent = RET && st.view == null && st.cur >= N ? 'Усі завдання пройдено' : 'Завдання ' + Math.min(vi() + 1, N) + ' / ' + N;
     $('pr').style.width = (st.cur / N * 100) + '%';
   }
   function showExits(){
