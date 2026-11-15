@@ -33,7 +33,33 @@
   .opt .l{font-weight:700;color:var(--p);flex:none;min-width:24px}
   .opt .ot{flex:1;min-width:0;font-size:16px;color:var(--txt);font-family:Roboto,Arial,sans-serif;font-weight:400}
   .q canvas,.ot canvas{display:block;pointer-events:none}
+  .q,.ot{white-space:pre-line}
   .opt.on{border-color:var(--ok);background:#e6f4ea}
+  .grp{font-weight:700;color:var(--p);margin:16px 0 4px;font-size:16px}
+  .grp small{font-weight:400;color:var(--mut);font-size:13px}
+  body.match .wrap{max-width:1100px}
+  .mtip{font-size:13px;color:var(--mut);margin:2px 0 6px;line-height:1.4}
+  .mtw{overflow:auto;margin:6px 0 4px;border:1px solid #c4c7c5;border-radius:6px;background:#fff;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  .mtw.narrow{max-height:calc(100vh - 140px);scroll-snap-type:x mandatory}
+  table.mt{border-collapse:separate;border-spacing:0;table-layout:fixed}
+  table.mt th,table.mt td{border-right:1px solid #c4c7c5;border-bottom:1px solid #c4c7c5}
+  table.mt th{background:var(--p2);text-align:left;vertical-align:top;padding:8px 9px;font-weight:400}
+  table.mt thead th{position:sticky;top:0;z-index:2;scroll-snap-align:start}
+  table.mt tbody th{position:sticky;left:0;z-index:1}
+  table.mt thead th.corner{left:0;z-index:3;font-size:12px;font-weight:500;line-height:1.4;color:var(--mut);vertical-align:middle}
+  table.mt th .l{display:block;font-weight:700;color:var(--p);margin-bottom:4px;font-size:15px}
+  table.mt th .ot{font-size:14px;font-weight:400;color:var(--txt);font-family:Roboto,Arial,sans-serif}
+  table.mt td{background:#fff;text-align:center;vertical-align:middle;padding:0;cursor:pointer}
+  table.mt label{display:flex;align-items:center;justify-content:center;min-height:56px;cursor:pointer}
+  table.mt input{width:26px;height:26px;margin:0;accent-color:var(--ok);cursor:pointer}
+  table.mt td.on{background:#ceead6}
+  table.mt th.on{background:#ceead6;box-shadow:inset 0 0 0 2px var(--ok)}
+  .mtw.narrow table.mt th{padding:6px 7px}
+  .mtw.narrow table.mt th .l{font-size:13px}
+  .mtw.narrow table.mt th .ot{font-size:13px}
+  @media (max-width:520px){ body.match .wrap{padding:8px 6px 80px} body.match #qcard{padding:16px 10px} }
+  body.match .m-type{display:none}
+  body:not(.match) .m-match{display:none}
   .ansbox{margin:14px 0 6px;padding-top:12px;border-top:1px dashed #dadce0}
   .ansbox label{display:block;font-weight:500;margin-bottom:6px}
   .ansrow{display:flex;gap:8px;align-items:stretch}
@@ -87,15 +113,20 @@
     <div class="warn">
       <b>Правила роботи</b><br>
       • Завдання показуються <b>по одному</b>. На кожне — <b id="perTxt"></b>. Повернутися назад не можна.<br>
-      • У кожному завданні <b id="optTxt">4 варіанти</b>. Обери правильний і почни <b>писати його з клавіатури</b> в поле «Моя відповідь».
+      <span class="m-type">• У кожному завданні <b id="optTxt">4 варіанти</b>. Обери правильний і почни <b>писати його з клавіатури</b> в поле «Моя відповідь».
         <b>Щойно почнеш третє слово — решта тексту підставиться сама.</b>
         Перевір текст, натисни <b>✓</b> праворуч від поля, а потім «Записати й далі». Кожне завдання — <b id="ptsTxt"></b>.<br>
-      • <b>Голосове введення й вставлення тексту заборонені</b> — такий текст не приймається, а спроба записується.<br>
+      • <b>Голосове введення й вставлення тексту заборонені</b> — такий текст не приймається, а спроба записується.<br></span>
+      <span class="m-match">• У кожному завданні — таблиця: <b id="solTxt">зліва 4 розв’язки (А, Б, В, Г)</b>, <b id="conTxt">угорі 2 висновки (1, 2)</b>.
+        Розв’яжи в зошиті, а потім постав у таблиці <b>одну позначку</b> — на перетині <b>рядка</b> правильного розв’язку
+        і <b>стовпця</b> висновку, який із нього випливає. Правильний розв’язок — <b id="ptsSol"></b>,
+        правильний висновок — <b id="ptsCon"></b>. Передумав(-ла) — постав позначку в іншу клітинку.
+        Якщо таблиця не вміщується на екрані, гортай її — висновки вгорі й розв’язки зліва лишаються на місці.<br></span>
       • Тест відкриється <b>на весь екран</b>. <b>Не виходь зі сторінки тесту.</b> Інші вкладки й додатки, згортання,
         скріншоти, Google Lens, Circle to Search, «Огляд від ШІ», Gemini, бічні панелі, розділений екран,
         вихід із повного екрана й перезавантаження <b>записуються в таблицю вчителя</b> (коли й на скільки секунд) —
         і враховуються в оцінці. Поки тебе немає на сторінці, завдання сховане, а час іде.<br>
-      • Кнопка <b>✓</b> біля поля і галочка «Готово» на клавіатурі — це <b>не</b> вихід, їх натискати можна.<br>
+      <span class="m-type">• Кнопка <b>✓</b> біля поля і галочка «Готово» на клавіатурі — це <b>не</b> вихід, їх натискати можна.<br></span>
       • Пройти тест можна <b>лише один раз</b>.
     </div>
     <label class="f" for="nm">Прізвище та ім'я</label>
@@ -123,7 +154,13 @@
       <div class="mut small" id="qsec"></div>
       <div class="q" id="qtext" aria-hidden="true"></div>
       <div id="opts" aria-hidden="true"></div>
-      <div class="ansbox">
+      <div class="m-match" id="gridbox">
+        <div class="grp">Розв’язки й висновки</div>
+        <div class="mtip" id="mtip"></div>
+        <div class="mtw" id="mtw"><table class="mt" id="mt" aria-hidden="true"></table></div>
+        <div class="hint" id="mhint"></div>
+      </div>
+      <div class="ansbox m-type">
         <label for="ans">Моя відповідь — пиши обраний варіант з клавіатури:</label>
         <div class="ansrow">
           <textarea class="ans" id="ans" rows="3" autocomplete="off" spellcheck="false" autocapitalize="sentences" autocorrect="off" enterkeyhint="done" placeholder="Пиши тут…"></textarea>
@@ -133,7 +170,7 @@
       </div>
       <div class="err" id="qerr"></div>
       <button id="next">Записати й далі →</button>
-      <p class="mut small">Повернутися до попереднього завдання не можна. Коли час мине, написаний текст збережеться сам.</p>
+      <p class="mut small">Повернутися до попереднього завдання не можна. Коли час мине, твоя відповідь збережеться сама.</p>
     </div>
   </div>
 
@@ -183,14 +220,17 @@ function APP(){
   var $ = function(id){ return document.getElementById(id); };
   var KEY = 'test_' + CFG.key, LET = ['А','Б','В','Г','Д','Е'], PER = CFG.per * 1000;
   var st = load() || {};
-  var tasks = [], optEls = [], optNorm = [], painted = [], W = CFG.win, skew = W.now - Date.now();
+  var tasks = [], optEls = [], conEls = [], optNorm = [], painted = [], W = CFG.win, skew = W.now - Date.now();
+  var MATCH = CFG.mode === 'match';
+  if (MATCH) document.body.classList.add('match');
   var finished = false, started = false, guarded = false;
   var kbdAt = 0, tapAt = 0, filling = false, lastOk = '', voiceAt = 0, hiding = false;
   var away = { blur: false, hidden: false, fs: false, narrow: false };
   var fsOn = false, fsBroken = false, wasFs = false, wasNarrow = false;
   var leftAt = 0, leftKind = '', leaveT = null, counted = false, lastBack = '';
   var tickT = null, gateT = null, busy = false, waiters = [], sureEmpty = false, sureNoMatch = false;
-  var baseSub = CFG.count + ' завдань · на кожне до ' + CFG.perMin + ' хв · кожне ' + fmt(CFG.pts) + ' б · разом ' + fmt(CFG.total) + ' б';
+  var baseSub = CFG.count + ' завдань · на кожне до ' + CFG.perMin + ' хв' + (CFG.carry ? ' (залишок часу переходить далі)' : '') +
+    ' · кожне ' + fmt(CFG.pts) + ' б · разом ' + fmt(CFG.total) + ' б';
 
   if (CFG.block) document.body.classList.add('lock');
   $('ttl').textContent = CFG.title;
@@ -203,7 +243,13 @@ function APP(){
   }
   $('ptsTxt').textContent = balyTxt(CFG.pts);
   if (CFG.nOpt) $('optTxt').textContent = CFG.nOpt + (CFG.nOpt >= 5 ? ' варіантів' : ' варіанти');
-  $('perTxt').textContent = 'до ' + CFG.perMin + ' хв';
+  $('perTxt').textContent = 'до ' + CFG.perMin + ' хв' + (CFG.carry ? '; невикористані хвилини переходять на наступне завдання' : '');
+  if (MATCH) {
+    $('ptsSol').textContent = balyTxt(CFG.ptsSol); $('ptsCon').textContent = balyTxt(CFG.ptsCon);
+    var nS = CFG.nOpt || 4, nC = CFG.nCon || nS;
+    $('solTxt').textContent = 'зліва ' + nS + (nS >= 5 ? ' розв’язків' : ' розв’язки') + ' (' + LET.slice(0, nS).join(', ') + ')';
+    $('conTxt').textContent = 'угорі ' + nC + (nC >= 5 ? ' висновків' : ' висновки') + ' (' + [1, 2, 3, 4, 5, 6].slice(0, nC).join(', ') + ')';
+  }
   $('ans').maxLength = CFG.maxLen;
   CFG.classes.forEach(function(c){ var o = document.createElement('option'); o.value = c; o.textContent = c; $('cl').appendChild(o); });
   $('cl').addEventListener('change', function(){ $('lerr').textContent = ''; gate(); });
@@ -282,12 +328,16 @@ function APP(){
     var c = holder._c;
     if (!c) { c = holder._c = document.createElement('canvas'); holder.textContent = ''; holder.appendChild(c); }
     var ctx = c.getContext('2d'); ctx.font = font;
-    var lines = [], line = '';
-    String(holder._t).split(/\s+/).forEach(function(wd){
-      var t = line ? line + ' ' + wd : wd;
-      if (line && ctx.measureText(t).width > w) { lines.push(line); line = wd; } else line = t;
+    var lines = [];
+    String(holder._t).split('\n').forEach(function(par){
+      var line = '';
+      par.split(/[ \t\r]+/).forEach(function(wd){
+        if (!wd) return;
+        var t = line ? line + ' ' + wd : wd;
+        if (line && ctx.measureText(t).width > w) { lines.push(line); line = wd; } else line = t;
+      });
+      lines.push(line);
     });
-    if (line) lines.push(line);
     var dpr = window.devicePixelRatio || 1, h = lines.length * lh + 2;
     c.width = Math.ceil(w * dpr); c.height = Math.ceil(h * dpr);
     c.style.width = w + 'px'; c.style.height = h + 'px';
@@ -302,7 +352,7 @@ function APP(){
     ctx.font = font; ctx.fillStyle = ink(bg, fg); ctx.textBaseline = 'middle';
     lines.forEach(function(l, i){ ctx.fillText(l, 0, i * lh + lh / 2 + 1); });
   }
-  function repaint(){ painted.forEach(function(h){ paint(h); }); }
+  function repaint(){ if (MATCH) sizeGrid(); painted.forEach(function(h){ paint(h); }); }
 
   // ---- черга відповідей: надсилаються по черзі, навіть якщо інтернет зникав або Google перевантажений ----
   function pump(){
@@ -411,24 +461,120 @@ function APP(){
     $('qsec').textContent = CFG.sections[t.s] || '';
     painted = [$('qtext')];
     var box = $('opts'); box.innerHTML = '';
-    optNorm = t.o.map(normText);
-    optEls = t.o.map(function(txt, i){
+    var mk = function(txt, lab){
       var d = document.createElement('div'); d.className = 'opt';
-      var l = document.createElement('span'); l.className = 'l'; l.textContent = LET[i] + ')';
+      var l = document.createElement('span'); l.className = 'l'; l.textContent = lab;
       var s = document.createElement('div'); s.className = 'ot';
       d.appendChild(l); d.appendChild(s); box.appendChild(d);
       s._t = txt; painted.push(s);
       return d;
-    });
+    };
+    var grp = function(txt, small){
+      var g = document.createElement('div'); g.className = 'grp'; g.textContent = txt;
+      if (small) { var sm = document.createElement('small'); sm.textContent = ' ' + small; g.appendChild(sm); }
+      box.appendChild(g);
+    };
+    if (MATCH) {
+      buildGrid(t);
+    } else {
+      optNorm = t.o.map(normText);
+      optEls = t.o.map(function(txt, i){ return mk(txt, LET[i] + ')'); });
+      conEls = [];
+    }
     $('qtext')._t = t.q;
     repaint();
-    $('ans').value = st.draft ? st.draft.val : '';
-    lastOk = $('ans').value;
-    setConfirmed(!!(st.draft && st.draft.ok));
     $('qerr').textContent = '';
     $('next').textContent = st.cur === tasks.length - 1 ? 'Записати й здати роботу ✓' : 'Записати й далі →';
-    onInput(false); progress();
+    if (MATCH) choose(st.draft && st.draft.pos === st.cur ? st.draft.val : '', false);
+    else {
+      $('ans').value = st.draft ? st.draft.val : '';
+      lastOk = $('ans').value;
+      setConfirmed(!!(st.draft && st.draft.ok));
+      onInput(false);
+    }
+    progress();
     window.scrollTo(0, 0);
+  }
+
+  // ---- ОДНА таблиця: у першому стовпці — розв’язки А–Г, у першому рядку — висновки 1–4, на перетинах — позначки ----
+  function buildGrid(t){
+    var tb = $('mt'); tb.innerHTML = '';
+    var cg = document.createElement('colgroup');
+    for (var k = 0; k <= t.c.length; k++) cg.appendChild(document.createElement('col'));
+    tb.appendChild(cg);
+    var head = function(cls, lab, txt){
+      var c = document.createElement('th'); c.className = cls;
+      var l = document.createElement('span'); l.className = 'l'; l.textContent = lab;
+      var s = document.createElement('div'); s.className = 'ot'; s._t = txt;
+      c.appendChild(l); c.appendChild(s); painted.push(s);
+      return c;
+    };
+    var thead = document.createElement('thead'), hr = document.createElement('tr');
+    var c0 = document.createElement('th'); c0.className = 'corner'; c0.innerHTML = 'Розв’язки ↓<br>Висновки →'; hr.appendChild(c0);
+    conEls = t.c.map(function(txt, j){ var th = head('con', 'Висновок ' + (j + 1), txt); hr.appendChild(th); return th; });
+    thead.appendChild(hr); tb.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    optEls = t.o.map(function(txt, i){
+      var tr = document.createElement('tr'), th = head('sol', 'Розв’язок ' + LET[i], txt);
+      tr.appendChild(th);
+      t.c.forEach(function(y, j){
+        var val = LET[i] + '-' + (j + 1);
+        var td = document.createElement('td'), lb = document.createElement('label'), r = document.createElement('input');
+        r.type = 'radio'; r.name = 'mt'; r.value = val;
+        r.setAttribute('aria-label', 'Розв’язок ' + LET[i] + ', висновок ' + (j + 1));
+        r.addEventListener('change', function(){ if (r.checked) choose(val, true); });
+        td.addEventListener('click', function(e){ if (e.target === td) choose(val, true); }); // уся клітинка, не лише кружечок
+        lb.appendChild(r); td.appendChild(lb); tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+      return th;
+    });
+    tb.appendChild(tbody);
+    $('mtw').scrollLeft = 0; $('mtw').scrollTop = 0;
+  }
+  /** Ширина стовпців: на комп’ютері таблицю видно повністю; на телефоні — закріплений стовпець розв’язків
+   *  і рівно один стовпець висновків поруч (гортання вбік переходить до наступного висновку) */
+  function sizeGrid(){
+    var box = $('mtw'), tb = $('mt'), t = tasks[st.cur];
+    if (!t || !tb.firstChild) return;
+    var W = box.clientWidth;
+    if (!W) return;
+    var n = t.c.length, narrow = W < 700, fit = true, a, b;
+    if (!narrow) { a = Math.round(W * (n <= 2 ? 0.4 : 0.27)); b = Math.floor((W - a - 2) / n); }
+    else {
+      a = Math.max(118, Math.min(170, Math.round(W * 0.42)));
+      b = Math.floor((W - a - 2) / n);
+      if (b < 86) { fit = false; b = Math.max(140, W - a - 2); } // не вміщується — по одному висновку, гортання вбік
+    }
+    var cols = tb.querySelectorAll('col');
+    for (var k = 0; k < cols.length; k++) cols[k].style.width = (k ? b : a) + 'px';
+    tb.style.width = (a + b * n) + 'px';
+    box.classList.toggle('narrow', narrow);
+    box.style.scrollPaddingLeft = a + 'px';
+    $('mtip').textContent = 'Постав ОДНУ позначку на перетині: рядок — правильний розв’язок (' + balyTxt(CFG.ptsSol) +
+      '), стовпець — висновок, що з нього випливає (' + balyTxt(CFG.ptsCon) + ').' +
+      (!narrow ? '' : fit ? ' Гортай таблицю вниз, щоб побачити всі розв’язки А–' + LET[t.o.length - 1] + '.'
+        : ' Гортай таблицю вбік, щоб побачити висновки 1–' + n + ', і вниз — розв’язки А–' + LET[t.o.length - 1] + '.');
+  }
+  function draftVal(){ return st.draft && st.draft.pos === st.cur ? st.draft.val || '' : ''; }
+  function choose(val, user){
+    if (finished) return;
+    var m = /^(.)-(\d)$/.exec(val || ''), ri = m ? LET.indexOf(m[1]) : -1, ci = m ? Number(m[2]) - 1 : -1;
+    if (user) { st.draft = { pos: st.cur, val: val }; save(); sureEmpty = false; $('qerr').textContent = ''; }
+    Array.prototype.forEach.call($('mt').querySelectorAll('tbody tr'), function(tr, i){
+      Array.prototype.forEach.call(tr.querySelectorAll('td'), function(td, j){
+        var on = i === ri && j === ci;
+        td.classList.toggle('on', on);
+        td.querySelector('input').checked = on;
+      });
+    });
+    var hl = function(els, k){ els.forEach(function(d, j){ var on = j === k; if (d.classList.contains('on') !== on) { d.classList.toggle('on', on); paint(d.lastChild); } }); };
+    hl(optEls, ri); hl(conEls, ci);
+    $('qcard').classList.toggle('filled', ri >= 0);
+    var nx = $('next').textContent.replace(/\s*[→✓]\s*$/, '');
+    $('mhint').textContent = ri >= 0
+      ? '✓ Обрано: розв’язок ' + m[1] + ' і висновок ' + m[2] + '. Натисни «' + nx + '». Передумав(-ла) — постав позначку в іншу клітинку.'
+      : 'Розв’яжи в зошиті й постав одну позначку: рядок — правильний розв’язок, стовпець — висновок до нього.';
   }
 
   // ---- поле відповіді ----
@@ -563,6 +709,16 @@ function APP(){
 
   function manualNext(){
     if (finished || !tasks.length || filling) return;
+    if (MATCH) {
+      if (!draftVal() && !sureEmpty) {
+        sureEmpty = true;
+        $('qerr').textContent = 'Ти ще не поставив(-ла) позначку в таблиці. Повернутися до цього завдання не можна. Натисни ще раз, щоб перейти далі без відповіді.';
+        return;
+      }
+      record(false);
+      if (st.cur >= tasks.length) submit(false); else showQ();
+      return;
+    }
     var raw = $('ans').value;
     if (!normText(raw) && !sureEmpty) {
       sureEmpty = true;
@@ -584,7 +740,7 @@ function APP(){
     if (txt) st.a[t.n] = txt;
     st.q.push({ pos: st.cur, l: txt });
     st.cur++;
-    st.dl = auto ? st.dl + PER : srv() + PER;
+    st.dl = auto || CFG.carry ? st.dl + PER : srv() + PER; // з перенесенням невикористаний час не пропадає
     st.draft = null;
     save(); pump();
   }
@@ -777,7 +933,7 @@ function APP(){
     document.body.classList.remove('away', 'noted');
     var d = $('done'); d.classList.remove('hidden');
     var h = '<h2>Роботу здано ✅</h2>';
-    if (r && r.score !== undefined) h += '<div class="big">' + fmt(r.score) + ' / ' + fmt(r.max) + '</div><div class="mut">Правильних відповідей: ' + r.right + ' з ' + CFG.count + '.</div>';
+    if (r && r.score !== undefined) h += '<div class="big">' + fmt(r.score) + ' / ' + fmt(r.max) + '</div><div class="mut">' + (MATCH ? 'Завдань без жодної помилки: ' : 'Правильних відповідей: ') + r.right + ' з ' + CFG.count + '.</div>';
     h += '<p class="mut">Остаточну оцінку виставить учитель з урахуванням виходів зі сторінки тесту. Пройти тест повторно можна лише з дозволу вчителя.</p>';
     d.innerHTML = h; window.scrollTo(0, 0);
   }
